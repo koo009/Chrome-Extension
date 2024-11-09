@@ -1,18 +1,9 @@
 // Create audio element
 const audio = new Audio(chrome.runtime.getURL('music.mp3'));
+audio.volume = 0.5;
+audio.loop = true;
 
-// Set audio properties
-audio.volume = 0.5; // 50% volume
-audio.loop = true;  // Will loop the music
-
-// Play audio when page loads
-document.addEventListener('DOMContentLoaded', () => {
-    audio.play().catch(error => {
-        console.log('Audio playback failed:', error);
-    });
-});
-
-// Optional: Add control to stop/start music
+// Create toggle button
 const toggleButton = document.createElement('button');
 toggleButton.innerHTML = '🔇';
 toggleButton.style.cssText = `
@@ -23,6 +14,8 @@ toggleButton.style.cssText = `
     padding: 10px;
     border-radius: 50%;
     cursor: pointer;
+    background: white;
+    border: 1px solid #ccc;
 `;
 
 toggleButton.addEventListener('click', () => {
@@ -36,3 +29,16 @@ toggleButton.addEventListener('click', () => {
 });
 
 document.body.appendChild(toggleButton);
+
+// Listen for messages from popup
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.action === "toggleMusic") {
+        if (audio.paused) {
+            audio.play();
+            toggleButton.innerHTML = '🔊';
+        } else {
+            audio.pause();
+            toggleButton.innerHTML = '🔇';
+        }
+    }
+});
