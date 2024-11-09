@@ -4,7 +4,9 @@
   "version": "1.0",
   "description": "Scrapes all text content from any website",
   "permissions": [
-    "activeTab"
+    "activeTab",
+    "downloads",
+    "scripting"
   ],
   "action": {
     "default_popup": "popup.html"
