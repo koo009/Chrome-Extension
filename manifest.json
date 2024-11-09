@@ -3,7 +3,14 @@
   "name": "Website Text Scraper",
   "version": "1.0",
   "description": "Scrapes text from websites and saves to file",
-  "permissions": ["activeTab", "downloads"],
+  "permissions": [
+    "activeTab",
+    "downloads",
+    "scripting"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
   "action": {
     "default_popup": "popup.html"
   }
