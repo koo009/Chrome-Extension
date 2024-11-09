@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Website Text Scraper",
+  "name": "Website Scraper with Music",
   "version": "1.0",
-  "description": "Scrapes text from websites and saves to file",
+  "description": "Scrapes text from websites and plays music",
   "permissions": [
     "activeTab",
     "downloads",
@@ -13,17 +13,13 @@
   ],
   "action": {
     "default_popup": "popup.html"
-  }
-  "content_scripts": [
-    {
-      "matches": ["<all_urls>"],
-      "js": ["content.js"]
-    }
-  ],
-  "web_accessible_resources": [
-    {
-      "resources": ["music.mp3"],
-      "matches": ["<all_urls>"]
-    }
-  ]   
+  },
+  "content_scripts": [{
+    "matches": ["<all_urls>"],
+    "js": ["content.js"]
+  }],
+  "web_accessible_resources": [{
+    "resources": ["music.mp3"],
+    "matches": ["<all_urls>"]
+  }]
 }
