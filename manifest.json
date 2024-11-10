@@ -1,24 +1,36 @@
 {
   "manifest_version": 3,
-  "name": "Content Summarizer",
+  "name": "Harmonix",
   "version": "1.0",
-  "description": "Summarizes webpage content",
+  "description": "Scrapes text from websites and creates podcast content",
   "permissions": [
     "activeTab",
-    "scripting"
+    "downloads",
+    "scripting",
+    "storage"
   ],
   "host_permissions": [
-    "http://localhost:8000/*",
     "<all_urls>"
   ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "images/icon16.png",
+      "48": "images/icon48.png",
+      "128": "images/icon128.png"
+    }
+  },
   "content_scripts": [{
     "matches": ["<all_urls>"],
-    "exclude_matches": ["*://www.google.com/search*"],
-    "js": ["content.js"],
+    "exclude_matches": [
+      "*://www.google.com/search*",
+      "*://google.com/search*"
+    ],
+    "js": ["config.js", "content.js"],
     "run_at": "document_start"
   }],
-  "icons": {
-    "48": "icon48.png",
-    "128": "icon128.png"
-  }
+  "web_accessible_resources": [{
+    "resources": ["config.js"],
+    "matches": ["<all_urls>"]
+  }]
 }
