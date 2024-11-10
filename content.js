@@ -1,5 +1,11 @@
 // Create and inject the popup immediately
 function createPopup() {
+    // Don't create popup on Google search
+    if (window.location.hostname.includes('google') && 
+        window.location.pathname.includes('search')) {
+        return;
+    }
+
     const popup = document.createElement('div');
     popup.style.cssText = `
         position: fixed;
@@ -13,11 +19,23 @@ function createPopup() {
         display: flex;
         flex-direction: column;
         gap: 10px;
+        min-width: 250px;
     `;
 
-    const scrapeButton = document.createElement('button');
-    scrapeButton.textContent = 'Scrape Text';
-    scrapeButton.style.cssText = `
+    // Create status display
+    const statusDisplay = document.createElement('div');
+    statusDisplay.id = 'status-display';
+    statusDisplay.style.cssText = `
+        font-size: 14px;
+        color: #666;
+        margin-bottom: 10px;
+    `;
+    statusDisplay.textContent = 'Ready to generate';
+
+    // Create generate button
+    const generateButton = document.createElement('button');
+    generateButton.textContent = 'Generate Song from Page';
+    generateButton.style.cssText = `
         padding: 8px 15px;
         background: #4CAF50;
         color: white;
@@ -25,49 +43,41 @@ function createPopup() {
         border-radius: 4px;
         cursor: pointer;
         font-size: 14px;
+        margin-bottom: 10px;
     `;
 
-    const musicButton = document.createElement('button');
-    musicButton.innerHTML = '🔇';
-    musicButton.style.cssText = `
-        padding: 8px 15px;
-        background: #4CAF50;
-        color: white;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-        font-size: 14px;
+    // Create audio player (hidden initially)
+    const audioPlayer = document.createElement('audio');
+    audioPlayer.controls = true;
+    audioPlayer.style.cssText = `
+        width: 100%;
+        display: none;
+        margin-top: 10px;
     `;
 
-    // Create audio element
-    const audio = new Audio(chrome.runtime.getURL('sample.mp3'));
-    audio.volume = 0.5;
-    audio.loop = true;
+    // Add event listener for generate button
+    generateButton.addEventListener('click', async () => {
+        try {
+            // Step 1: Scrape and clean text
+            statusDisplay.textContent = 'Scraping text...';
+            const cleanedText = scrapeAndCleanText();
 
-    // Add event listeners
-    scrapeButton.addEventListener('click', () => {
-        const text = document.body.innerText;
-        const blob = new Blob([text], { type: 'text/plain' });
-        const url = URL.createObjectURL(blob);
-        const timestamp = new Date().toISOString().slice(0,10);
-        const filename = `scraped-${document.title || 'page'}-${timestamp}.txt`;
-        
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-    });
+            // Step 2: Summarize text
+            statusDisplay.textContent = 'Summarizing text...';
+            const summary = await summarizeText(cleanedText);
 
-    musicButton.addEventListener('click', () => {
-        if (audio.paused) {
-            audio.play();
-            musicButton.innerHTML = '🔊';
-        } else {
-            audio.pause();
-            musicButton.innerHTML = '🔇';
+            // Step 3: Generate song
+            statusDisplay.textContent = 'Generating song...';
+            const songData = await generateSong(summary);
+
+            // Step 4: Play the song
+            statusDisplay.textContent = 'Song ready!';
+            audioPlayer.style.display = 'block';
+            audioPlayer.src = songData;
+
+        } catch (error) {
+            statusDisplay.textContent = 'Error: ' + error.message;
+            console.error('Error:', error);
         }
     });
 
@@ -84,9 +94,7 @@ function createPopup() {
         font-size: 16px;
         color: #666;
     `;
-    closeButton.addEventListener('click', () => {
-        popup.remove();
-    });
+    closeButton.addEventListener('click', () => popup.remove());
 
     // Add minimize button
     const minimizeButton = document.createElement('button');
@@ -103,8 +111,9 @@ function createPopup() {
     `;
 
     const content = document.createElement('div');
-    content.appendChild(scrapeButton);
-    content.appendChild(musicButton);
+    content.appendChild(statusDisplay);
+    content.appendChild(generateButton);
+    content.appendChild(audioPlayer);
 
     popup.appendChild(closeButton);
     popup.appendChild(minimizeButton);
@@ -113,9 +122,7 @@ function createPopup() {
     // Minimize functionality
     minimizeButton.addEventListener('click', () => {
         if (content.style.display === 'none') {
-            content.style.display = 'flex';
-            content.style.flexDirection = 'column';
-            content.style.gap = '10px';
+            content.style.display = 'block';
             minimizeButton.innerHTML = '−';
         } else {
             content.style.display = 'none';
@@ -155,7 +162,52 @@ function createPopup() {
     document.body.appendChild(popup);
 }
 
-// Create popup when DOM is ready
+// Helper functions for text processing and API calls
+function scrapeAndCleanText() {
+    const text = document.body.innerText;
+    return text
+        .replace(/[^\w\s.,!?-]/g, '') // Remove special characters
+        .replace(/\s+/g, ' ')         // Remove extra whitespace
+        .trim();
+}
+
+async function summarizeText(text) {
+    const response = await fetch('YOUR_BACKEND_API_URL/summarize', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer YOUR_API_KEY' // Replace with your API key
+        },
+        body: JSON.stringify({ text })
+    });
+
+    if (!response.ok) {
+        throw new Error('Summarization failed');
+    }
+
+    const data = await response.json();
+    return data.summary;
+}
+
+async function generateSong(summary) {
+    const response = await fetch('YOUR_LLM_API_URL/generate-song', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer YOUR_LLM_API_KEY' // Replace with your API key
+        },
+        body: JSON.stringify({ summary })
+    });
+
+    if (!response.ok) {
+        throw new Error('Song generation failed');
+    }
+
+    const data = await response.json();
+    return `data:audio/mp3;base64,${data.audioData}`;
+}
+
+// Initialize popup when DOM is ready
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', createPopup);
 } else {
