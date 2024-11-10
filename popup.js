@@ -46,7 +46,6 @@ async function summarizeText(text) {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer YOUR_API_KEY' // If needed
         },
         body: JSON.stringify({ text })
     });
@@ -65,7 +64,6 @@ async function generateSong(summary) {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer YOUR_LLM_API_KEY'
         },
         body: JSON.stringify({ summary })
     });
