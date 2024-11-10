@@ -32,9 +32,25 @@ function createPopup() {
     `;
     statusDisplay.textContent = 'Ready to generate';
 
+    // Create output type selector
+    const outputTypeSelector = document.createElement('select');
+    outputTypeSelector.style.cssText = `
+        padding: 5px;
+        margin-bottom: 10px;
+        border-radius: 4px;
+        border: 1px solid #ccc;
+    `;
+
+    ['music', 'edm', 'podcast'].forEach(type => {
+        const option = document.createElement('option');
+        option.value = type;
+        option.textContent = type.toUpperCase();
+        outputTypeSelector.appendChild(option);
+    });
+
     // Create generate button
     const generateButton = document.createElement('button');
-    generateButton.textContent = 'Generate Song from Page';
+    generateButton.textContent = 'Generate from Page';
     generateButton.style.cssText = `
         padding: 8px 15px;
         background: #4CAF50;
@@ -58,22 +74,46 @@ function createPopup() {
     // Add event listener for generate button
     generateButton.addEventListener('click', async () => {
         try {
-            // Step 1: Scrape and clean text
-            statusDisplay.textContent = 'Scraping text...';
-            const cleanedText = scrapeAndCleanText();
+            // Update status
+            statusDisplay.textContent = 'Scraping and processing content...';
 
-            // Step 2: Summarize text
-            statusDisplay.textContent = 'Summarizing text...';
-            const summary = await summarizeText(cleanedText);
+            // Scrape content
+            const websiteContent = await scrapeAndCleanText();
+            websiteContent.output_type = outputTypeSelector.value;
 
-            // Step 3: Generate song
-            statusDisplay.textContent = 'Generating song...';
-            const songData = await generateSong(summary);
+            // Process content through backend
+            const result = await processContent(websiteContent);
 
-            // Step 4: Play the song
-            statusDisplay.textContent = 'Song ready!';
-            audioPlayer.style.display = 'block';
-            audioPlayer.src = songData;
+            // Display summary
+            const summaryElement = document.createElement('div');
+            summaryElement.style.cssText = `
+                margin: 10px 0;
+                padding: 10px;
+                background: #f5f5f5;
+                border-radius: 4px;
+                font-size: 14px;
+                max-height: 200px;
+                overflow-y: auto;
+            `;
+            summaryElement.textContent = result.summary;
+            
+            // Remove previous summary if exists
+            const previousSummary = content.querySelector('.summary');
+            if (previousSummary) {
+                previousSummary.remove();
+            }
+            
+            summaryElement.classList.add('summary');
+            content.insertBefore(summaryElement, audioPlayer);
+
+            // Handle audio if available
+            if (result.audio_url && result.audio_url !== "None") {
+                statusDisplay.textContent = 'Audio ready!';
+                audioPlayer.style.display = 'block';
+                audioPlayer.src = result.audio_url;
+            } else {
+                statusDisplay.textContent = 'Summary generated (Audio pending)';
+            }
 
         } catch (error) {
             statusDisplay.textContent = 'Error: ' + error.message;
@@ -112,6 +152,7 @@ function createPopup() {
 
     const content = document.createElement('div');
     content.appendChild(statusDisplay);
+    content.appendChild(outputTypeSelector);
     content.appendChild(generateButton);
     content.appendChild(audioPlayer);
 
@@ -162,47 +203,36 @@ function createPopup() {
     document.body.appendChild(popup);
 }
 
-// Helper functions for text processing and API calls
-function scrapeAndCleanText() {
+// Helper functions for API integration
+async function scrapeAndCleanText() {
     const text = document.body.innerText;
-    return text
+    const cleanedText = text
         .replace(/[^\w\s.,!?-]/g, '') // Remove special characters
         .replace(/\s+/g, ' ')         // Remove extra whitespace
         .trim();
+
+    return {
+        url: window.location.href,
+        content: cleanedText,
+        output_type: "music" // Default value, will be updated by selector
+    };
 }
 
-async function summarizeText(text) {
-    const response = await fetch('YOUR_BACKEND_API_URL/summarize', {
+async function processContent(websiteContent) {
+    const response = await fetch('http://localhost:8000/process', {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json',
+            'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ text })
+        body: JSON.stringify(websiteContent)
     });
 
     if (!response.ok) {
-        throw new Error('Summarization failed');
+        const error = await response.json();
+        throw new Error(error.detail || 'Processing failed');
     }
 
-    const data = await response.json();
-    return data.summary;
-}
-
-async function generateSong(summary) {
-    const response = await fetch('YOUR_LLM_API_URL/generate-song', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ summary })
-    });
-
-    if (!response.ok) {
-        throw new Error('Song generation failed');
-    }
-
-    const data = await response.json();
-    return `data:audio/mp3;base64,${data.audioData}`;
+    return await response.json();
 }
 
 // Initialize popup when DOM is ready
