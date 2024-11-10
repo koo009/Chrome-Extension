@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Website Scraper with Music",
+  "name": "Harmonix",
   "version": "1.0",
-  "description": "Scrapes text from websites and plays music",
+  "description": "Scrapes text from websites and creates a song",
   "permissions": [
     "activeTab",
     "downloads",
@@ -21,7 +21,7 @@
     "run_at": "document_start"
   }],
   "web_accessible_resources": [{
-    "resources": ["music.mp3", "popup.html"],
+    "resources": ["sample.mp3", "popup.html"],
     "matches": ["<all_urls>"]
   }]
 }
