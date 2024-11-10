@@ -1,15 +1,14 @@
 {
   "manifest_version": 3,
-  "name": "Text to Song Generator",
+  "name": "Harmonix Content Processor",
   "version": "1.0",
-  "description": "Scrapes text, summarizes it, and creates a song",
+  "description": "Processes website content into audio",
   "permissions": [
     "activeTab",
-    "downloads",
-    "scripting",
-    "storage"
+    "scripting"
   ],
   "host_permissions": [
+    "http://localhost:8000/*",
     "<all_urls>"
   ],
   "content_scripts": [{
@@ -18,7 +17,7 @@
     "js": ["content.js"],
     "run_at": "document_start"
   }],
-  "action": {
-    "default_popup": "popup.html"
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
   }
 }
