@@ -20,6 +20,7 @@ function createPopup() {
         flex-direction: column;
         gap: 10px;
         min-width: 250px;
+        max-width: 350px;
     `;
 
     // Create status display
@@ -30,7 +31,7 @@ function createPopup() {
         color: #666;
         margin-bottom: 10px;
     `;
-    statusDisplay.textContent = 'Ready to generate';
+    statusDisplay.textContent = 'Ready to generate summary';
 
     // Create output type selector
     const outputTypeSelector = document.createElement('select');
@@ -50,7 +51,7 @@ function createPopup() {
 
     // Create generate button
     const generateButton = document.createElement('button');
-    generateButton.textContent = 'Generate from Page';
+    generateButton.textContent = 'Generate Summary';
     generateButton.style.cssText = `
         padding: 8px 15px;
         background: #4CAF50;
@@ -60,22 +61,24 @@ function createPopup() {
         cursor: pointer;
         font-size: 14px;
         margin-bottom: 10px;
+        transition: background-color 0.3s;
     `;
 
-    // Create audio player (hidden initially)
-    const audioPlayer = document.createElement('audio');
-    audioPlayer.controls = true;
-    audioPlayer.style.cssText = `
-        width: 100%;
-        display: none;
-        margin-top: 10px;
-    `;
+    generateButton.addEventListener('mouseenter', () => {
+        generateButton.style.backgroundColor = '#45a049';
+    });
+
+    generateButton.addEventListener('mouseleave', () => {
+        generateButton.style.backgroundColor = '#4CAF50';
+    });
 
     // Add event listener for generate button
     generateButton.addEventListener('click', async () => {
         try {
             // Update status
-            statusDisplay.textContent = 'Scraping and processing content...';
+            statusDisplay.textContent = 'Processing content...';
+            generateButton.disabled = true;
+            generateButton.style.backgroundColor = '#cccccc';
 
             // Scrape content
             const websiteContent = await scrapeAndCleanText();
@@ -94,6 +97,7 @@ function createPopup() {
                 font-size: 14px;
                 max-height: 200px;
                 overflow-y: auto;
+                line-height: 1.4;
             `;
             summaryElement.textContent = result.summary;
             
@@ -104,20 +108,28 @@ function createPopup() {
             }
             
             summaryElement.classList.add('summary');
-            content.insertBefore(summaryElement, audioPlayer);
+            content.appendChild(summaryElement);
 
-            // Handle audio if available
-            if (result.audio_url && result.audio_url !== "None") {
-                statusDisplay.textContent = 'Audio ready!';
-                audioPlayer.style.display = 'block';
-                audioPlayer.src = result.audio_url;
-            } else {
-                statusDisplay.textContent = 'Summary generated (Audio pending)';
-            }
+            statusDisplay.textContent = 'Summary generated successfully';
+            
+            // Add a note about audio generation
+            const audioNote = document.createElement('div');
+            audioNote.style.cssText = `
+                margin-top: 10px;
+                font-size: 12px;
+                color: #666;
+                font-style: italic;
+                text-align: center;
+            `;
+            audioNote.textContent = 'Audio generation feature coming soon!';
+            content.appendChild(audioNote);
 
         } catch (error) {
             statusDisplay.textContent = 'Error: ' + error.message;
             console.error('Error:', error);
+        } finally {
+            generateButton.disabled = false;
+            generateButton.style.backgroundColor = '#4CAF50';
         }
     });
 
@@ -133,7 +145,14 @@ function createPopup() {
         cursor: pointer;
         font-size: 16px;
         color: #666;
+        transition: color 0.3s;
     `;
+    closeButton.addEventListener('mouseenter', () => {
+        closeButton.style.color = '#000';
+    });
+    closeButton.addEventListener('mouseleave', () => {
+        closeButton.style.color = '#666';
+    });
     closeButton.addEventListener('click', () => popup.remove());
 
     // Add minimize button
@@ -148,13 +167,19 @@ function createPopup() {
         cursor: pointer;
         font-size: 16px;
         color: #666;
+        transition: color 0.3s;
     `;
+    minimizeButton.addEventListener('mouseenter', () => {
+        minimizeButton.style.color = '#000';
+    });
+    minimizeButton.addEventListener('mouseleave', () => {
+        minimizeButton.style.color = '#666';
+    });
 
     const content = document.createElement('div');
     content.appendChild(statusDisplay);
     content.appendChild(outputTypeSelector);
     content.appendChild(generateButton);
-    content.appendChild(audioPlayer);
 
     popup.appendChild(closeButton);
     popup.appendChild(minimizeButton);
@@ -165,9 +190,11 @@ function createPopup() {
         if (content.style.display === 'none') {
             content.style.display = 'block';
             minimizeButton.innerHTML = '−';
+            popup.style.height = 'auto';
         } else {
             content.style.display = 'none';
             minimizeButton.innerHTML = '+';
+            popup.style.height = '30px';
         }
     });
 
@@ -179,17 +206,24 @@ function createPopup() {
     let initialY;
 
     popup.addEventListener('mousedown', (e) => {
-        if (e.target === popup) {
+        if (e.target === popup || e.target === statusDisplay) {
             isDragging = true;
             initialX = e.clientX - popup.offsetLeft;
             initialY = e.clientY - popup.offsetTop;
+            popup.style.cursor = 'grabbing';
         }
     });
 
     document.addEventListener('mousemove', (e) => {
         if (isDragging) {
+            e.preventDefault();
             currentX = e.clientX - initialX;
             currentY = e.clientY - initialY;
+            
+            // Keep popup within window bounds
+            currentX = Math.max(0, Math.min(currentX, window.innerWidth - popup.offsetWidth));
+            currentY = Math.max(0, Math.min(currentY, window.innerHeight - popup.offsetHeight));
+            
             popup.style.left = currentX + 'px';
             popup.style.top = currentY + 'px';
             popup.style.right = 'auto';
@@ -198,6 +232,7 @@ function createPopup() {
 
     document.addEventListener('mouseup', () => {
         isDragging = false;
+        popup.style.cursor = 'default';
     });
 
     document.body.appendChild(popup);
