@@ -40,7 +40,7 @@ function createPopup() {
     `;
 
     // Create audio element
-    const audio = new Audio(chrome.runtime.getURL('music.mp3'));
+    const audio = new Audio(chrome.runtime.getURL('sample.mp3'));
     audio.volume = 0.5;
     audio.loop = true;
 
