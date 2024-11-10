@@ -176,7 +176,6 @@ async function summarizeText(text) {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer YOUR_API_KEY' // Replace with your API key
         },
         body: JSON.stringify({ text })
     });
@@ -194,7 +193,6 @@ async function generateSong(summary) {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer YOUR_LLM_API_KEY' // Replace with your API key
         },
         body: JSON.stringify({ summary })
     });
