@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Harmonix Content Processor",
+  "name": "Content Summarizer",
   "version": "1.0",
-  "description": "Processes website content into audio",
+  "description": "Summarizes webpage content",
   "permissions": [
     "activeTab",
     "scripting"
@@ -17,7 +17,8 @@
     "js": ["content.js"],
     "run_at": "document_start"
   }],
-  "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'"
+  "icons": {
+    "48": "icon48.png",
+    "128": "icon128.png"
   }
 }
